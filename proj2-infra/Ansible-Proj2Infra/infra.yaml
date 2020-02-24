@@ -1,0 +1,17 @@
+---
+
+- name: Initializing all servers
+  hosts: webservers
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - 01_common
+
+- name: Configuring Web servers
+  hosts: webservers
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - 02_nginx

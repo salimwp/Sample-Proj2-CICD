@@ -1,0 +1,82 @@
+---
+
+- name: Transferring nginx.repo
+  copy:
+    src: nginx.repo
+    dest: /etc/yum.repos.d/nginx.repo
+
+- name: Update packages
+  yum:
+    name: '*'
+    state: latest
+        
+- name: Checking if new kernel was installed
+  shell: |
+    NEW_KERNEL=`rpm -q kernel --queryformat '%{installtime} %{version}-%{release}.%{arch}\n' | sort -n -k1 | tail -1 | cut -d ' ' -f 2`
+    CURRENT_KERNEL=`uname -r`
+    if [ $NEW_KERNEL = $CURRENT_KERNEL ];
+    then
+      exit 0
+    else
+      exit 1
+    fi
+  register: bootRequired
+  changed_when: bootRequired.rc != 0
+  failed_when: bootRequired.rc >= 2
+  ignore_errors: yes
+    
+- name: Rebooting server
+  reboot:
+  when: bootRequired.rc != 0
+
+- name: Installing nginx
+  yum:
+    name: nginx
+    state: latest
+
+- name: Transferring nginx.conf
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+
+- name: Transferring proj2.conf
+  copy:
+    src: proj2.conf
+    dest: /etc/nginx/conf.d/default.conf
+
+- name: Creating www directory
+  file:
+    path: /var/www
+    state: directory
+    mode: 0750
+    owner: ansible
+    group: nginx
+
+- name: Creating proj2 web directory
+  file:
+    path: /var/www/proj2.parabellyx.com
+    state: directory
+    mode: 0750
+    owner: ansible
+    group: nginx
+
+- name: Transferring stub index file
+  template:
+    src: index.html.j2
+    dest: /var/www/proj2.parabellyx.com/index.html
+    mode: 0640
+    owner: ansible
+    group: nginx
+
+- name: Configuring firewall
+  firewalld:
+    port: 80/tcp
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+- name: Starting nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes

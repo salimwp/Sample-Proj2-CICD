@@ -1,0 +1,8 @@
+proj2-cicd/keys
+proj2-cicd/bin
+proj2-cicd/include
+proj2-cicd/lib
+proj2-cicd/pyvenv.cfg
+.DS_Store
+notes
+proj2-app

@@ -1,0 +1,80 @@
+---
+
+- name: Create git users for proj2
+  user:
+    name: "{{ item }}"
+    shell: /bin/git-shell
+    home: /srv/{{ item }}
+  with_items:
+    - git-proj2app
+    - git-proj2net
+    - git-proj2infra
+    
+- name: Copying ssh keys
+  authorized_key:
+    user: "{{ item }}"
+    state: present
+    key: "{{ lookup('file', 'keys/myKey.pub') }}"
+  with_items:
+    - git-proj2app
+    - git-proj2net
+    - git-proj2infra
+
+- name: Fixing SELinux context to .ssh
+  sefcontext:
+    target: "/srv/{{ item }}/.ssh(/.*)?"
+    setype: ssh_home_t
+    state: present
+  with_items:
+    - git-proj2app
+    - git-proj2net
+    - git-proj2infra
+
+- name: Applying SELinux context
+  command: restorecon -irv /srv/{{ item }}
+  with_items:
+    - git-proj2app
+    - git-proj2net
+    - git-proj2infra
+    
+- name: Initializing git-proj2app repo
+  command: 
+    cmd: git init --bare /srv/git-proj2app/proj2app.git
+    creates: /srv/git-proj2app/proj2app.git/description
+  become_user: git-proj2app
+
+- name: Transferring post-receive file
+  copy:
+    src: post-receive-app
+    dest: /srv/git-proj2app/proj2app.git/hooks/post-receive
+    owner: git-proj2app
+    group: git-proj2app
+    mode: 0755
+
+- name: Initializing git-proj2infra repo
+  command: 
+    cmd: git init --bare /srv/git-proj2infra/proj2infra.git
+    creates: /srv/git-proj2infra/proj2infra.git/description
+  become_user: git-proj2infra
+
+- name: Transferring post-receive file
+  copy:
+    src: post-receive-infra
+    dest: /srv/git-proj2infra/proj2infra.git/hooks/post-receive
+    owner: git-proj2infra
+    group: git-proj2infra
+    mode: 0755
+
+- name: Initializing git-proj2net repo
+  command: 
+    cmd: git init --bare /srv/git-proj2net/proj2net.git
+    creates: /srv/git-proj2net/proj2net.git/description
+  become_user: git-proj2net
+
+- name: Transferring post-receive file
+  copy:
+    src: post-receive-net
+    dest: /srv/git-proj2net/proj2net.git/hooks/post-receive
+    owner: git-proj2net
+    group: git-proj2net
+    mode: 0755

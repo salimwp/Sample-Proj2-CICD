@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+    stages {
+        stage('Create Environment') {
+            steps {
+                sh '''
+                python3 -m venv ansible
+                source ansible/bin/activate
+                pip3 install -r requirements.txt
+                '''
+            }
+        }
+        stage('Execute ansible playbook') {
+            steps{
+                echo "> Running playbook"
+                sh '''
+                source ansible/bin/activate
+                ansible-playbook -i Ansible-Proj2Infra/hosts Ansible-Proj2Infra/infra.yaml
+                '''
+            }
+        }
+    }
+}

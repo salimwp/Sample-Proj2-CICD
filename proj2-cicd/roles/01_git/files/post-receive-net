@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -k --user <login>:<pass> http://192.168.50.30/job/proj2-net/build?token=<token>

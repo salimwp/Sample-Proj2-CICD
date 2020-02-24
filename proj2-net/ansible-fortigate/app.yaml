@@ -1,0 +1,143 @@
+---
+
+- hosts: localhost
+  vars:
+    host: "192.168.50.1"
+    username: "ansible"
+    password: "{{ lookup('password','/var/lib/jenkins/passwd') }}"
+    vdom: "root"
+    ssl_verify: "False"
+  tasks:
+  - name: Removing firewall policy to allow ext to  VLAN_200
+    fortios_firewall_policy:
+      host: "{{ host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      vdom: "{{ vdom }}"
+      https: "True"
+      ssl_verify: "False"
+      firewall_policy:
+        state: "present"
+        srcintf:
+          -
+            name: "wan1"
+        srcaddr:
+          -
+            name: "all"
+        dstintf:
+          -
+            name: "VLAN_200"
+        dstaddr:
+          -
+            name: "Wordpress-Prod_HTTPS"
+        schedule: "always"
+        service:
+          -
+            name: "ALL"
+        action: "accept"
+        nat: "enable"
+        status: "enable"
+        policyid: "15"
+        name: "WWW Prod Access"
+  - name: Removing Wordpress VIP
+    fortios_firewall_vip:
+      host:  "{{ host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      vdom:  "{{ vdom }}"
+      https: "True"
+      state: "present"
+      ssl_verify: "False"
+      firewall_vip:
+        name: "Wordpress-Prod_HTTPS"
+        extintf: "wan1"
+        extip: "192.168.0.101"
+        mappedip:
+        -
+          range: "10.1.2.80"
+        portforward: "enable"
+        protocol: "tcp"
+        extport: "443"
+        mappedport: "443"
+  - name: Creating VIP for wordpress
+    fortios_firewall_vip:
+      host:  "{{ host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      vdom:  "{{ vdom }}"
+      https: "True"
+      state: "absent"
+      ssl_verify: "False"
+      firewall_vip:
+        name: "http-host-ldb"
+        type: "server-load-balance"
+        comment: "Mapping http host to internal web servers"
+        extintf: "any"
+        extip: "192.168.0.101"
+        server_type: "http"
+        http_ip_header: enable
+        extport: "443"
+        realservers:
+            -
+              ip: "10.1.2.80"
+              port: "443"
+  - name: Creating VIP for proj1
+    fortios_firewall_vip:
+      host:  "{{ host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      vdom:  "{{ vdom }}"
+      https: "True"
+      state: "present"
+      ssl_verify: "False"
+      firewall_vip:
+        name: "proj2-ldb"
+        type: "server-load-balance"
+        comment: "Mapping to internal web servers"
+        extintf: "any"
+        extip: "192.168.0.101"
+        server_type: "http"
+        http_ip_header: enable
+        ldb_method: weighted
+        extport: "8080"
+        realservers:
+            -
+              ip: "10.1.2.31"
+              port: "80"
+              weight: "2"
+            -
+              ip: "10.1.2.30"
+              port: "80"
+  - name: Configuring firewall policy to allow ext to  VLAN_200
+    fortios_firewall_policy:
+      host: "{{ host }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      vdom: "{{ vdom }}"
+      https: "True"
+      ssl_verify: "False"
+      firewall_policy:
+        state: "present"
+        srcintf:
+          -
+            name: "wan1"
+        srcaddr:
+          -
+            name: "all"
+        dstintf:
+          -
+            name: "VLAN_200"
+        dstaddr:
+          -
+            name: "Wordpress-Prod_HTTPS"
+          -
+            name: "proj2-ldb"
+        schedule: "always"
+        service:
+          -
+            name: "ALL"
+        action: "accept"
+        nat: "enable"
+        status: "enable"
+        policyid: "15"
+        name: "WWW Prod Access"

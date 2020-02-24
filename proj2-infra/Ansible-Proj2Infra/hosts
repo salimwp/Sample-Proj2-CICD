@@ -1,0 +1,22 @@
+all:
+    children:
+        lbas:
+            hosts:
+                lba:
+                    ansible_host: 10.1.2.29
+                    ansible_user: ansible
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        webservers:
+            hosts:
+                ws1-prod:
+                    ansible_host: 10.1.2.30
+                    ansible_user: ansible
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                ws2-prod:
+                    ansible_host: 10.1.2.31
+                    ansible_user: ansible
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                ws1-dev:
+                    ansible_host: 10.1.1.30
+                    ansible_user: ansible
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
